@@ -13,6 +13,7 @@ import SwiftCSV
 struct Localization: Codable {
     let sourceLanguage: String
     let strings: [String: LocalizedString]
+    let version: String
 }
 
 struct LocalizedString: Codable {
@@ -57,16 +58,6 @@ func convertToCSV(localization: Localization, to filePath: String, languages: [S
     }
 }
 
-func parseCSV2(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "key", separator: any RegexComponent = /,/, languages: [String]? = nil) throws -> Localization? {
-    let csv = try CSV<Named>(url: URL(string: "file://\(filePath)")!, encoding: .utf8, loadColumns: true)
-    let columns = csv.rows
-        for x in columns {
-            print("\(x)\n\n")
-        }
-
-    return nil
-}
-
 func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "key", separator: any RegexComponent = /,/, languages: [String]? = nil) throws -> Localization? {
     let csv = try CSV<Named>(url: URL(string: "file://\(filePath)")!, encoding: .utf8, loadColumns: true)
     guard csv.header.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(keyColumn) == .orderedSame }) != nil else {
@@ -92,54 +83,7 @@ func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: S
 
         strings[key] = LocalizedString(comment: nil, extractionState: "manual", localizations: localizations)
     }
-    return Localization(sourceLanguage: sourceLanguage, strings: strings)
-}
-
-func parseCSV3(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "key", separator: any RegexComponent = /,/, languages: [String]? = nil) -> Localization? {
-    guard let csvString = try? String(contentsOf: URL(fileURLWithPath: filePath), encoding: .utf8) else { return nil }
-    var lines = csvString.components(separatedBy: "\n")
-    let header = lines.removeFirst()
-    let headerColumns = Array(header.split(separator: separator))
-    guard let keyColumnIndex = headerColumns.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(keyColumn) == .orderedSame }) else {
-        print("A key column was not found.")
-        exit(1)
-    }
-    var langColumnIndexes = [String:Int]()
-    for index in 0..<headerColumns.count {
-        if index == keyColumnIndex { continue }
-        let lang = String(headerColumns[index].trimmingCharacters(in: .whitespacesAndNewlines))
-        if let languages, !languages.contains(lang) { continue }  // If we're given a list of languages, only read the languages in the list and ignore others
-        langColumnIndexes[String(lang)] = index
-    }
-
-    guard langColumnIndexes.count >= 1 else {
-        print("No matching language columns found.")
-        return nil
-    }
-
-    var strings: [String: LocalizedString] = [:]
-
-    for (lineNo, line) in lines.enumerated() {
-        let lineColumns = line.split(separator: separator)
-
-        guard let key = lineColumns[safe: keyColumnIndex] else {
-            print("Warning: key not found on line \(lineNo), skipping line:\n \(line).")
-            continue
-        }
-
-        var localizations = [String: LocalizationValue]()
-        for index in 0..<lineColumns.count {
-            if index == keyColumnIndex { continue }
-            if let lang = lineColumns[safe: index] {
-                let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(lineColumns[safe: index] ?? "")))
-                localizations[String(lang)] = localizationValue
-            }
-        }
-
-        strings[String(key)] = LocalizedString(comment: nil, extractionState: "manual", localizations: localizations)
-    }
-
-    return Localization(sourceLanguage: sourceLanguage, strings: strings)
+    return Localization(sourceLanguage: sourceLanguage, strings: strings, version: "1.0")
 }
 
 func backupFile(at path: String) throws {
@@ -160,7 +104,7 @@ extension Localization {
         var existingStrings = self.strings
 
         for (key, localizedString) in updatedLocalization.strings {
-            var trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
             if let existingLocalizedString = existingStrings[trimmedKey] {
                 var mergedLocalizations = existingLocalizedString.localizations
 
@@ -176,7 +120,7 @@ extension Localization {
                 print("Warning: key '\(trimmedKey)' not found in existing localization.")
             }
         }
-        return Localization(sourceLanguage: self.sourceLanguage, strings: existingStrings)
+        return Localization(sourceLanguage: self.sourceLanguage, strings: existingStrings, version: self.version)
     }
 
     func writeJson(to filePath: String) throws {
