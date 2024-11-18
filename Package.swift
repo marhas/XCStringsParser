@@ -5,8 +5,10 @@ import PackageDescription
 
 let package = Package(
     name: "XCStringsParser",
+    platforms: [.macOS(SupportedPlatform.MacOSVersion.v13)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-collections.git", from: "1.0.0"),
+        .package(url: "https://github.com/swiftcsv/SwiftCSV.git", from: "0.8.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -15,6 +17,7 @@ let package = Package(
             name: "XCStringsParser",
             dependencies: [
                 .product(name: "Collections", package: "swift-collections"),
+                .product(name: "SwiftCSV", package: "SwiftCSV"),
             ]
             ),
     ]
