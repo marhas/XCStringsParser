@@ -20,5 +20,8 @@ let package = Package(
                 .product(name: "SwiftCSV", package: "SwiftCSV"),
             ]
             ),
+        .testTarget(name: "XCStringsParserTests",
+                    dependencies: ["XCStringsParser"],
+                    resources: [.copy("resources")])
     ]
 )

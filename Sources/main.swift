@@ -12,99 +12,104 @@ import SwiftCSV
 
 let defaultDelimiter: Character = ";"
 
-struct Localization: Codable {
-    let sourceLanguage: String
-    let strings: [String: LocalizedString]
-    let version: String
+public struct Localization: Codable {
+    public let sourceLanguage: String
+    public let strings: [String: LocalizedString]
+    public let version: String
 }
 
-struct LocalizedString: Codable {
-    let comment: String?
-    let extractionState: String
-    var localizations: [String: LocalizationValue]
+public struct LocalizedString: Codable {
+    public let comment: String?
+    public let extractionState: String
+    public var localizations: [String: LocalizationValue]
 }
 
-struct LocalizationValue: Codable {
-    let stringUnit: StringUnit
+public struct LocalizationValue: Codable {
+    public let stringUnit: StringUnit
 }
 
-struct StringUnit: Codable {
-    let state: String
-    let value: String
+public struct StringUnit: Codable {
+    public let state: String
+    public let value: String
 }
 
-func parseJSON(from filePath: String) -> Localization? {
-    guard let data = try? Data(contentsOf: URL(fileURLWithPath: filePath)) else { return nil }
-    let decoder = JSONDecoder()
-    return try? decoder.decode(Localization.self, from: data)
-}
 
-func convertToCSV(localization: Localization, to filePath: String, delimiter: String, languages: [String]? = nil) {
-    let localizedLanguages = Set(localization.strings.first!.value.localizations.keys)
-    let filteredLocalizedLanguages = languages.map { OrderedSet($0) }.map { localizedLanguages.intersection($0) } ?? localizedLanguages
+public struct XCStringsParser {
+    public init() {}
+    
+    public func parseJSON(from filePath: String) -> Localization? {
+        guard let data = try? Data(contentsOf: URL(fileURLWithPath: filePath)) else { return nil }
+        let decoder = JSONDecoder()
+        return try? decoder.decode(Localization.self, from: data)
+    }
 
-    var csvString = "Key" + delimiter + filteredLocalizedLanguages.joined(separator: delimiter) + delimiter + "Comment\n"
-    for (key, localizedString) in localization.strings.sorted(by: { $0.key < $1.key }) {
-        let comment = localizedString.comment ?? ""
-        var line = "\(key)\(delimiter)"
-        for lang in filteredLocalizedLanguages {
-            line += "\(localizedString.localizations[lang]?.stringUnit.value ?? "")\(delimiter)"
+    public func convertToCSV(localization: Localization, to filePath: String, delimiter: String, languages: [String]? = nil) {
+        let localizedLanguages = Set(localization.strings.first!.value.localizations.keys)
+        let filteredLocalizedLanguages = languages.map { OrderedSet($0) }.map { localizedLanguages.intersection($0) } ?? localizedLanguages
+
+        var csvString = "Key" + delimiter + filteredLocalizedLanguages.joined(separator: delimiter) + delimiter + "Comment\n"
+        for (key, localizedString) in localization.strings.sorted(by: { $0.key < $1.key }) {
+            let comment = localizedString.comment ?? ""
+            var line = "\(key)\(delimiter)"
+            for lang in filteredLocalizedLanguages {
+                line += "\(localizedString.localizations[lang]?.stringUnit.value ?? "")\(delimiter)"
+            }
+            line += "\(comment)\n"
+            csvString.append(line)
         }
-        line += "\(comment)\n"
-        csvString.append(line)
-    }
-    do {
-        try csvString.write(toFile: filePath, atomically: true, encoding: .utf8)
-        print("File written to \(filePath).")
-    } catch {
-        print("Error writing CSV to \(filePath): \(error)")
-    }
-}
-
-func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "Key", commentColumn: String = "comment", delimiter: String, languages: [String]? = nil) throws -> Localization? {
-    let delimiter = delimiter.first ?? defaultDelimiter
-    let csv = try CSV<Named>(url: URL(string: "file://\(filePath)")!, delimiter: .character(delimiter), encoding: .utf8, loadColumns: true)
-    guard csv.header.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(keyColumn) == .orderedSame }) != nil else {
-        print("A key column named \(keyColumn) was not found.")
-        exit(1)
-    }
-
-    var strings: [String: LocalizedString] = [:]
-
-    for row in csv.rows {
-        var localizations = [String: LocalizationValue]()
-        guard let key = row["Key"] else {
-            print("No Key found in row: \(row)")
-            continue
+        do {
+            try csvString.write(toFile: filePath, atomically: true, encoding: .utf8)
+            print("File written to \(filePath).")
+        } catch {
+            print("Error writing CSV to \(filePath): \(error)")
         }
-        for col in row.keys {
-            // All columns are expected to be languages except for the key and comment columns
-            if col.caseInsensitiveCompare(keyColumn) == .orderedSame || col.caseInsensitiveCompare(commentColumn) == .orderedSame { continue }
-            if let languages, !languages.contains(col) { continue }
+    }
 
-            let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(row[col] ?? "")))
-            localizations[col] = localizationValue
+    public func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "Key", commentColumn: String = "comment", delimiter: String, languages: [String]? = nil) throws -> Localization? {
+        let delimiter = delimiter.first ?? defaultDelimiter
+        let csv = try CSV<Named>(url: URL(string: "file://\(filePath)")!, delimiter: .character(delimiter), encoding: .utf8, loadColumns: true)
+        guard csv.header.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(keyColumn) == .orderedSame }) != nil else {
+            print("A key column named \(keyColumn) was not found.")
+            exit(1)
         }
 
-        strings[key] = LocalizedString(comment: row["comment"], extractionState: "manual", localizations: localizations)
+        var strings: [String: LocalizedString] = [:]
+
+        for row in csv.rows {
+            var localizations = [String: LocalizationValue]()
+            guard let key = row["Key"] else {
+                print("No Key found in row: \(row)")
+                continue
+            }
+            for col in row.keys {
+                // All columns are expected to be languages except for the key and comment columns
+                if col.caseInsensitiveCompare(keyColumn) == .orderedSame || col.caseInsensitiveCompare(commentColumn) == .orderedSame { continue }
+                if let languages, !languages.contains(col) { continue }
+
+                let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(row[col] ?? "")))
+                localizations[col] = localizationValue
+            }
+
+            strings[key] = LocalizedString(comment: row["comment"], extractionState: "manual", localizations: localizations)
+        }
+        return Localization(sourceLanguage: sourceLanguage, strings: strings, version: "1.0")
     }
-    return Localization(sourceLanguage: sourceLanguage, strings: strings, version: "1.0")
+
+    public func backupFile(at path: String) throws {
+        let fm = FileManager()
+        let dateFormatter: DateFormatter = {
+            let df = DateFormatter()
+            df.dateFormat = "yyyy-MM-dd-HH.mm.ss"
+            return df
+        }()
+        if fm.fileExists(atPath: path) {
+            let backupFileName = "\(path).org-\(dateFormatter.string(from: Date()))"
+            try fm.copyItem(atPath: path, toPath: backupFileName)
+        }
+    }
 }
 
-func backupFile(at path: String) throws {
-    let fm = FileManager()
-    let dateFormatter: DateFormatter = {
-        let df = DateFormatter()
-        df.dateFormat = "yyyy-MM-dd-HH.mm.ss"
-        return df
-    }()
-    if fm.fileExists(atPath: path) {
-        let backupFileName = "\(path).org-\(dateFormatter.string(from: Date()))"
-        try fm.copyItem(atPath: path, toPath: backupFileName)
-    }
-}
-
-extension Localization {
+public extension Localization {
     func merge(_ updatedLocalization: Localization, languages: [String]? = nil) -> Localization {
         var existingStrings = self.strings
 
@@ -181,19 +186,21 @@ guard FileManager.default.fileExists(atPath: source) else {
     exit(1)
 }
 
+let parser = XCStringsParser()
+
 if source.isXCStrings {
-    if let localization = parseJSON(from: source) {
-        convertToCSV(localization: localization, to: dest, delimiter: String(csvDelimiter), languages: langs)
+    if let localization = parser.parseJSON(from: source) {
+        parser.convertToCSV(localization: localization, to: dest, delimiter: String(csvDelimiter), languages: langs)
     }
 } else if source.isCSV, dest.isXCStrings {
-    if let updatedLocalization = try parseCSV(from: source, delimiter: String(csvDelimiter), languages: langs) {
+    if let updatedLocalization = try parser.parseCSV(from: source, delimiter: String(csvDelimiter), languages: langs) {
         if FileManager.default.fileExists(atPath: dest) {
-            guard let existingLocalization = parseJSON(from: dest) else {
+            guard let existingLocalization = parser.parseJSON(from: dest) else {
                 print("Cannot read \(dest)")
                 exit(1)
             }
             let mergedLocalization = existingLocalization.merge(updatedLocalization, languages: langs)
-            try backupFile(at: dest)
+            try parser.backupFile(at: dest)
             try mergedLocalization.writeJson(to: dest)
         } else {
             try updatedLocalization.writeJson(to: dest)
