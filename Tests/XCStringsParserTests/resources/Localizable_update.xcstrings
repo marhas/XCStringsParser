@@ -1,0 +1,60 @@
+{
+  "strings": {
+    "Decrease home team score": {
+      "comment": "Shortcut action (comments are not expected to be changed in updated xcstrings files)",
+      "extractionState": "extraction state is currently also ignored when merging files, the original value is retained.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EN Decrease home team score"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FR Diminuer le score de l'équipe à domicile"
+          }
+        }
+      }
+    },
+    "Deuce" : {
+      "comment" : "Used for score callouts",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DE Einstand"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EN Deuce"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ES Deuce"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FR Égalité"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SV Lika"
+          }
+        }
+      }
+    },
+  },
+  "sourceLanguage": "en",
+  "version": "1.0"
+}

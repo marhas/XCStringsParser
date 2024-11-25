@@ -1,6 +1,8 @@
 //
-//  main.swift
 //  XCStringsParser
+//
+//  Exports an XCStrings file to CVS which can be sent out for translation
+//  Can then import it back again, merging the translations with your current xcstrings file.
 //
 //  Created by Marcel Hasselaar on 2024-11-12.
 //
@@ -12,23 +14,23 @@ import SwiftCSV
 
 let defaultDelimiter: Character = ";"
 
-public struct Localization: Codable {
+public struct Localization: Codable, Equatable {
     public let sourceLanguage: String
     public let strings: [String: LocalizedString]
     public let version: String
 }
 
-public struct LocalizedString: Codable {
+public struct LocalizedString: Codable, Equatable {
     public let comment: String?
     public let extractionState: String
     public var localizations: [String: LocalizationValue]
 }
 
-public struct LocalizationValue: Codable {
+public struct LocalizationValue: Codable, Equatable {
     public let stringUnit: StringUnit
 }
 
-public struct StringUnit: Codable {
+public struct StringUnit: Codable, Equatable {
     public let state: String
     public let value: String
 }
