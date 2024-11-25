@@ -83,5 +83,6 @@ struct Test {
         }
         #expect(sourceLocalization.version == importedLocalization.version)
         #expect(sourceLocalization.sourceLanguage == importedLocalization.sourceLanguage)
+        try? FileManager.default.removeItem(atPath: tempFile)
     }
 }
