@@ -54,7 +54,7 @@ public struct XCStringsParser {
             let comment = localizedString.comment ?? ""
             var line = "\(key)\(delimiter)"
             for lang in filteredLocalizedLanguages {
-                line += "\(localizedString.localizations[lang]?.stringUnit.value ?? "")\(delimiter)"
+                line += quote("\(localizedString.localizations[lang]?.stringUnit.value ?? "")") + delimiter
             }
             line += "\(comment)\n"
             csvString.append(line)
@@ -65,6 +65,16 @@ public struct XCStringsParser {
         } catch {
             print("Error writing CSV to \(filePath): \(error)")
         }
+    }
+
+    // Strings that contain newlines needs to be quoted in order to be correctly imported into most programs.
+    // Also, if a string contains the " character, it needs to be "escaped" by replacing it with two " characters, i.e. "word" -> ""word""
+    private func quote(_ string: String) -> String {
+        guard string.contains(/[\"\n]/) else { return string }
+        return
+        "\"" + string
+            .replacingOccurrences(of: "\"", with: "\"\"")
+        + "\""
     }
 
     public func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "Key", commentColumn: String = "comment", delimiter: String, languages: [String]? = nil) throws -> Localization? {
