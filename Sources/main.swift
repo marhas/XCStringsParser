@@ -100,7 +100,7 @@ public struct XCStringsParser {
                 if let languages, !languages.contains(col) { continue }
 
                 stats[col, default: 0] += 1
-                let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(row[col] ?? "")))
+                let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(row[col] ?? "").applyNewlineNormalization()))
                 localizations[col] = localizationValue
             }
 
@@ -128,6 +128,13 @@ public struct XCStringsParser {
     }
 }
 
+public extension String {
+    func applyNewlineNormalization() -> Self {
+        self.replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: "\u{2028}", with: "\n")
+            .replacingOccurrences(of: "\u{2029}", with: "\n")
+    }
+}
 public extension Localization {
     func merge(_ updatedLocalization: Localization, languages: [String]? = nil) -> Localization {
         var existingStrings = self.strings
