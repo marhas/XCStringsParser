@@ -72,9 +72,9 @@ public struct XCStringsParser {
     private func quote(_ string: String) -> String {
         guard string.contains(/[\"\n]/) else { return string }
         return
-        "\"" + string
-            .replacingOccurrences(of: "\"", with: "\"\"")
-        + "\""
+            "\"" + string
+                .replacingOccurrences(of: "\"", with: "\"\"")
+            + "\""
     }
 
     public func parseCSV(from filePath: String, sourceLanguage: String = "en", keyColumn: String = "Key", commentColumn: String = "comment", delimiter: String, languages: [String]? = nil) throws -> Localization? {
@@ -87,6 +87,7 @@ public struct XCStringsParser {
 
         var strings: [String: LocalizedString] = [:]
 
+        var stats = [String: Int]()  // Lang code: Number of strings
         for row in csv.rows {
             var localizations = [String: LocalizationValue]()
             guard let key = row["Key"] else {
@@ -98,11 +99,17 @@ public struct XCStringsParser {
                 if col.caseInsensitiveCompare(keyColumn) == .orderedSame || col.caseInsensitiveCompare(commentColumn) == .orderedSame { continue }
                 if let languages, !languages.contains(col) { continue }
 
+                stats[col, default: 0] += 1
                 let localizationValue = LocalizationValue(stringUnit: StringUnit(state: "translated", value: String(row[col] ?? "")))
                 localizations[col] = localizationValue
             }
 
             strings[key] = LocalizedString(comment: row["comment"], extractionState: "manual", localizations: localizations)
+        }
+        if stats.isEmpty {
+            print("WARNING! No strings found. Check that the column headers match.")
+        } else {
+            print("CSV parsed: \(stats)")
         }
         return Localization(sourceLanguage: sourceLanguage, strings: strings, version: "1.0")
     }

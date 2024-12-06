@@ -72,7 +72,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-l en,es"
+            argument = "-l en,de,fr"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
